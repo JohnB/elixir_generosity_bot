@@ -11,10 +11,11 @@ Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
 
 Ready to run in production? Please [check our deployment guides](http://www.phoenixframework.org/docs/deployment).
 
-## Learn more
+## Process Observer
 
-  * Official website: http://www.phoenixframework.org/
-  * Guides: http://phoenixframework.org/docs/overview
-  * Docs: https://hexdocs.pm/phoenix
-  * Mailing list: http://groups.google.com/group/phoenix-talk
-  * Source: https://github.com/phoenixframework/phoenix
+Elixir comes with a GUI for visualizing all your processes and process tree. Use it like this:
+
+* Start the app in the debugger with `iex -S mix phoenix.server`
+* Start the observer with `:observer.start`
+* Press ctrl-C twice to exit.
+
