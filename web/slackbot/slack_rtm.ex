@@ -14,16 +14,16 @@ defmodule SlackRtm do
   end
 
   def handle_event(message = %{type: "message", channel: "C" <> _}, slack, state) do
+    new_state = state
     IO.puts "received CHANNEL message on #{message.channel}: #{inspect(message)}."
 
-    # open a DM when we see a trigger message
+    # Start a conversation when we see a trigger message
     if trigger_word?(message.text) do
       {:ok, conversation_pid, new_state} = fetch_conversation_pid(message.channel, state)
       IO.puts "C-message: #{inspect(new_state)}."
-      # send(conversation_pid, ...
+      GenServer.cast(conversation_pid, {:start_conversation, message, self()})
     else
       IO.puts "C-message: no trigger"
-      new_state = state
     end
 
     {:ok, new_state}
@@ -38,9 +38,7 @@ defmodule SlackRtm do
     {:ok, conversation_pid, new_state} = fetch_conversation_pid(message.channel, state)
     IO.puts "D-message: #{inspect(new_state)}"
 
-    # TODO: move this DM into the Conversation module
-    dm = "Hi <@#{message.user}>!\nWho would you like to recognize today?"
-    ebot_message(dm, message.channel, slack)
+    GenServer.cast(conversation_pid, {:continue_conversation, message, self()})
 
     {:ok, new_state}
   end
@@ -49,7 +47,7 @@ defmodule SlackRtm do
   defp fetch_conversation_pid(channel_name, state) do
     IO.puts('fetch_conversation_pid(#{channel_name}, #{inspect(state)})')
     if Map.has_key?(state.conversations, channel_name) do
-      pid = Map.fetch(state.conversations, channel_name)
+      {:ok, pid} = Map.fetch(state.conversations, channel_name)
     else
       IO.puts('starting conversation for #{channel_name}')
       {:ok, pid} = Conversation.start_link(channel_name)
@@ -64,16 +62,15 @@ defmodule SlackRtm do
   #   send(rtm, {:message, "External message", "#johnb_qa4_test"})
   # but it isn't obvious that we'll send such things very often.
   def handle_info({:message, text, channel}, slack, state) do
-    IO.puts "Sending your message, captain!"
-
-    ebot_message("[eBot]" <> text, channel, slack)
+    ebot_message(text, channel, slack)
 
     {:ok, state}
   end
   def handle_info(_, _, state), do: {:ok, state}
 
   def ebot_message(text, channel, slack) do
-    send_message("[eBot] " <> text, channel, slack)
+    result = send_message("[eBot] " <> text, channel, slack)
+    IO.puts("ebot_message result=#{inspect(result)}.")
   end
 
   @triggers %{
