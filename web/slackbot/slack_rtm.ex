@@ -17,7 +17,7 @@ defmodule SlackRtm do
     IO.puts "received CHANNEL message on #{message.channel}: #{inspect(message)}."
 
     # open a DM when we see a trigger message
-    if message.text == "hbd" do
+    if trigger_word?(message.text) do
       {:ok, conversation_pid, new_state} = fetch_conversation_pid(message.channel, state)
       IO.puts "C-message: #{inspect(new_state)}."
       # send(conversation_pid, ...
@@ -75,4 +75,19 @@ defmodule SlackRtm do
   def ebot_message(text, channel, slack) do
     send_message("[eBot] " <> text, channel, slack)
   end
+
+  @triggers %{
+    '1': ~r/good\b.*\bjob|great\b.*\bjob|awesome\b.*\bjob|great\b.*\bwork|nice\b.*\bjob|nice\b.*\bwork|way to go/i,
+    '2': ~r/happy\b.*\bbirthday|happy\b.*\bbday|hbd|happy\b.*\bburfday|happy\b.*\bbirtday|happy day of birth|happy\b.*\bbarfday|happy b'?day|happiest\b.*\bbirthday/i,
+    '3': ~r/happy\b.*\banniversary|happy work anniversary|happy\b.*\bworkiversary|happiest\b.*\banniversary/i,
+    '4': ~r/congrats|congratulations/i,
+    '5': ~r/thanks|thank yous?|thx|gracias|arigato/i
+  }
+
+  # Check if the given text agains our trigger regexes
+  def trigger_word?(text) do
+    Map.values(@triggers)
+    |>  Enum.any?(fn(value) -> Regex.match?(value, text) end)
+  end
+
 end
