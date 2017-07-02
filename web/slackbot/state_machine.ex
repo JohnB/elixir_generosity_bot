@@ -1,8 +1,9 @@
 defmodule StateMachine do
   use Slack
 
-  def init(state) do
-    %{current_state: :init}
+  def init(pid, state) do
+    send(pid, {:message, "GenerosityBot started", "#general"})
+    %{bot_pid: pid, current_state: :init}
   end
   
   def channel_message(message, slack, state) do
