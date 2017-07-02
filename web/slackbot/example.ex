@@ -7,16 +7,23 @@ defmodule SlackRtm do
   end
 
   # Explicitly ignore a bunch of messages - but not a direct or "ambient" channel message
-  def handle_event(message = %{type: "message", channel: "D" <> _}, slack, state) do
-    {:ok, StateMachine.direct_message(message, slack, state)}
-  end
+  def handle_event(%{type: "message", subtype: "channel_join"}, _, state), do: {:ok, state}
   def handle_event(message = %{type: "message", channel: "C" <> _}, slack, state) do
     {:ok, StateMachine.channel_message(message, slack, state)}
   end
+  def handle_event(message = %{type: "message", channel: "D" <> _}, slack, state) do
+    {:ok, StateMachine.direct_message(message, slack, state)}
+  end
+  def handle_event(message = %{type: "channel_joined"}, slack, state) do
+    {:ok, StateMachine.invited(message, slack, state)}
+  end
+  def handle_event(%{type: "channel_left"}, _, state), do: {:ok, state}
   def handle_event(%{type: "desktop_notification"}, _, state), do: {:ok, state}
   def handle_event(%{type: "hello"}, _, state), do: {:ok, state}
+  def handle_event(%{type: "member_joined_channel"}, _, state), do: {:ok, state}
   def handle_event(%{type: "presence_change"}, _, state), do: {:ok, state}
   def handle_event(%{type: "reconnect_url"}, _, state), do: {:ok, state}
+  def handle_event(%{type: "update_thread_state"}, _, state), do: {:ok, state}
   def handle_event(%{type: "user_typing"}, _, state), do: {:ok, state}
   def handle_event(message, _, state) do
     IO.puts "unhandled message: #{inspect(message)}"
