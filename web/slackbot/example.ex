@@ -5,7 +5,7 @@ defmodule SlackRtm do
     IO.puts ""
     IO.puts "---"
     IO.puts "Connected as #{slack.me.name}"
-    {:ok, state}
+    {:ok, StateMachine.init(state)}
   end
 
   def handle_event(message = %{type: "message", channel: "D" <> _}, slack, state) do
@@ -13,17 +13,24 @@ defmodule SlackRtm do
     dm = "Hi <@#{message.user}>!\nWho would you like to recognize today?"
     send_message(dm, message.channel, slack)
 
-    {:ok, state}
+    {:ok, StateMachine.direct_message(message, slack, state)}
   end
   def handle_event(message = %{type: "message", channel: "C" <> _}, slack, state) do
     IO.puts "received CHANNEL message on #{message.channel}: #{inspect(message)}."
 
+    {:ok, StateMachine.channel_message(message, slack, state)}
+  end
+  # Explicitly ignore a bunch of messages
+  def handle_event(%{type: "desktop_notification"}, _, state), do: {:ok, state}
+  def handle_event(%{type: "reconnect_url"}, _, state), do: {:ok, state}
+  def handle_event(%{type: "user_typing"}, _, state), do: {:ok, state}
+  def handle_event(message, _, state) do
+    IO.puts "unhandled message: #{inspect(message)}"
     {:ok, state}
   end
-  def handle_event(_, _, state), do: {:ok, state}
 
   # handle_info gets called when we send a message this way:
-  #   send(rtm, {:message, "External message", "#johnb_qa4_test"})
+  #   send(pid, {:message, "External message", "#johnb_qa4_test"})
   # but it isn't obvious that we'll send such things very often.
   def handle_info({:message, text, channel}, slack, state) do
     IO.puts "Sending your message, captain!"
