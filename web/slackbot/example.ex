@@ -3,19 +3,19 @@ defmodule SlackRtm do
 
   def handle_connect(slack, state) do
     IO.puts "Connected as #{slack.me.name}"
-    {:ok, StateMachine.init(self, state)}
+    {:ok, StateMachine.init(state, self)}
   end
 
   # Explicitly ignore a bunch of messages - but not a direct or "ambient" channel message
   def handle_event(%{type: "message", subtype: "channel_join"}, _, state), do: {:ok, state}
   def handle_event(message = %{type: "message", channel: "C" <> _}, slack, state) do
-    {:ok, StateMachine.channel_message(message, slack, state)}
+    {:ok, StateMachine.channel_message(state, message, slack)}
   end
   def handle_event(message = %{type: "message", channel: "D" <> _}, slack, state) do
-    {:ok, StateMachine.direct_message(message, slack, state)}
+    {:ok, StateMachine.direct_message(state, message, slack)}
   end
   def handle_event(message = %{type: "channel_joined"}, slack, state) do
-    {:ok, StateMachine.invited(message, slack, state)}
+    {:ok, StateMachine.invited(state, message, slack)}
   end
   def handle_event(%{type: "channel_left"}, _, state), do: {:ok, state}
   def handle_event(%{type: "desktop_notification"}, _, state), do: {:ok, state}
