@@ -11,6 +11,10 @@ defmodule SlackRtm do
   def handle_event(message = %{type: "message", channel: "C" <> _}, slack, state) do
     {:ok, StateMachine.channel_message(state, message, slack)}
   end
+  def handle_event(message = %{type: "message", channel: "D" <> _, subtype: "message_changed"}, slack, state) do
+    IO.puts "Ignoring modified message"
+    {:ok, state}
+  end
   def handle_event(message = %{type: "message", channel: "D" <> _}, slack, state) do
     {:ok, StateMachine.direct_message(state, message, slack)}
   end

@@ -27,7 +27,11 @@ defmodule DMState do
   defp transit(channel_state = %{state: :init}, message, slack) do
     if Utils.mentions_user?(message.text) && Utils.trigger_phrase?(message.text) do
       IO.puts "transitioning from DM init state"
-      send_message("Would you like to give karma to someone?", message.channel, slack)
+      slack_user_ids = Utils.slack_user_ids(message.text)
+      user_names = Enum.map(slack_user_ids, fn(id) -> slack.users[id].name end )
+      
+      question = "Would you like to give karma to #{Enum.join(user_names, ", ")}?"
+      send_message(question, message.channel, slack)
       %{channel_state | state: :confirm}
     else
       channel_state
@@ -35,10 +39,10 @@ defmodule DMState do
   end
   defp transit(channel_state = %{state: :confirm}, message, slack) do
     if Utils.affirmative?(message.text) do
-      IO.puts "give karma!"
+      send_message("Giving some kind of karma...", message.channel, slack)
       %{state: :init}
     else
-      IO.puts "not confirmed"
+      send_message("OK - some other time", message.channel, slack)
       %{state: :init}
     end
   end
